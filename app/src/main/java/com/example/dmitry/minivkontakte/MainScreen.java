@@ -1,16 +1,37 @@
 package com.example.dmitry.minivkontakte;
 
-import android.support.v7.app.AppCompatActivity;
+import android.app.ListActivity;
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.Menu;
-import android.view.MenuItem;
+import android.support.annotation.Nullable;
+import android.view.*;
+import android.widget.*;
 
-public class MainScreen extends AppCompatActivity {
+import com.vk.sdk.VKAccessToken;
+import com.vk.sdk.VKAccessTokenTracker;
+import com.vk.sdk.VKSdk;
+
+public class MainScreen extends ListActivity {
+
+    VKAccessTokenTracker vkAccessTokenTracker = new VKAccessTokenTracker() {
+        @Override
+        public void onVKAccessTokenChanged(@Nullable VKAccessToken oldToken, @Nullable VKAccessToken newToken) {
+            if (newToken == null) {
+                Toast.makeText(MainScreen.this, "Признак доступа(пароль) недействителен", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(MainScreen.this, LoginActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_screen);
+
+        vkAccessTokenTracker.startTracking();
+        VKSdk.initialize(this);
     }
 
     @Override

@@ -2,5 +2,10 @@
 
     <string name="app_name">Мини-Вконтакте</string>
     <integer name="com_vk_sdk_AppId">4754059</integer>
+    
+    <string name="send_message_text_info">Отправить сообщение</string>
+    <string name="ok_button">Ок</string>
+    <string name="attach_image_to_message">Прикрепить картинку</string>
+    <string name="desc_of_friend_photo">Фото друга</string>
 
 </resources>

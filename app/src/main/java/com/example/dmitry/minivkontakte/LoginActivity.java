@@ -115,7 +115,7 @@ public class LoginActivity extends FragmentActivity {
     }
 
     private void startTestActivity() {
-        startActivity(new Intent(this, TestActivity.class));
+        startActivity(new Intent(this, MainActivity.class));
     }
 
     public static class LoginFragment extends android.support.v4.app.Fragment {

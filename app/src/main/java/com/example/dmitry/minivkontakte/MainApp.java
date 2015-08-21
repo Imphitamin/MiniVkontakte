@@ -29,7 +29,7 @@ public class MainApp extends android.app.Application {
         vkAccessTokenTracker.startTracking();
         VKSdk.initialize(this);
 
-        Toast.makeText(MainApp.this, "УРА!", Toast.LENGTH_LONG).show();
+        Toast.makeText(MainApp.this, "Main App", Toast.LENGTH_LONG).show();
     }
 
 }

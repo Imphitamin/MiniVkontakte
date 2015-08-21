@@ -14,7 +14,7 @@ public class ListScreen extends ListActivity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        Toast.makeText(ListScreen.this, "УРА!", Toast.LENGTH_LONG).show();
+        Toast.makeText(ListScreen.this, "List Screen", Toast.LENGTH_LONG).show();
     }
 
 }

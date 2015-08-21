@@ -19,20 +19,24 @@ import com.vk.sdk.api.VKError;
 
 public class LoginActivity extends FragmentActivity {
 
-   private static final String[] sMyScope = new String[] {
-           VKScope.FRIENDS,
-           VKScope.WALL,
-           VKScope.PHOTOS,
-           VKScope.NOHTTPS,
-           VKScope.MESSAGES,
-           VKScope.DOCS
-   };
+    /**
+     * Scope is set of required permissions for your application
+     *
+     * @see <a href="https://vk.com/dev/permissions">vk.com api permissions documentation</a>
+     */
+    private static final String[] sMyScope = new String[]{
+            VKScope.FRIENDS,
+            VKScope.WALL,
+            VKScope.PHOTOS,
+            VKScope.NOHTTPS,
+            VKScope.MESSAGES,
+            VKScope.DOCS
+    };
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_start);
-
         VKSdk.wakeUpSession(this, new VKCallback<VKSdk.LoginState>() {
             @Override
             public void onResult(VKSdk.LoginState res) {
@@ -55,19 +59,22 @@ public class LoginActivity extends FragmentActivity {
 
             }
         });
-    }
 
-    private void showLogin() {
-        getSupportFragmentManager()
-                .beginTransaction()
-                .replace(R.id.container, new LoginFragment())
-                .commit();
+//        String[] fingerprint = VKUtil.getCertificateFingerprint(this, this.getPackageName());
+//        Log.d("Fingerprint", fingerprint[0]);
     }
 
     private void showLogout() {
         getSupportFragmentManager()
                 .beginTransaction()
                 .replace(R.id.container, new LogoutFragment())
+                .commit();
+    }
+
+    private void showLogin() {
+        getSupportFragmentManager()
+                .beginTransaction()
+                .replace(R.id.container, new LoginFragment())
                 .commit();
     }
 
@@ -79,6 +86,7 @@ public class LoginActivity extends FragmentActivity {
         } else {
             showLogin();
         }
+
     }
 
     @Override
@@ -91,23 +99,23 @@ public class LoginActivity extends FragmentActivity {
         VKCallback<VKAccessToken> callback = new VKCallback<VKAccessToken>() {
             @Override
             public void onResult(VKAccessToken res) {
-                // Пользователь прошел авторизацию
-                startMyActivity();
+                // User passed Authorization
+                startTestActivity();
             }
 
             @Override
             public void onError(VKError error) {
-
+                // User didn't pass Authorization
             }
         };
 
-        if (!VKSdk.onActivityResult(requestCode, resultCode, data, callback)) {
+        if (!VKSdk.onActivityResult(requestCode, resultCode, data, callback) ) {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
-    private void startMyActivity() {
-        startActivity(new Intent(this, ListScreen.class));
+    private void startTestActivity() {
+        startActivity(new Intent(this, TestActivity.class));
     }
 
     public static class LoginFragment extends android.support.v4.app.Fragment {
@@ -120,12 +128,13 @@ public class LoginActivity extends FragmentActivity {
             View v = inflater.inflate(R.layout.login_screen, container, false);
             v.findViewById(R.id.btn_Login).setOnClickListener(new View.OnClickListener() {
                 @Override
-            public void onClick(View view) {
+                public void onClick(View view) {
                     VKSdk.login(getActivity(), sMyScope);
                 }
             });
             return v;
         }
+
     }
 
     public static class LogoutFragment extends android.support.v4.app.Fragment {
@@ -139,7 +148,7 @@ public class LoginActivity extends FragmentActivity {
             v.findViewById(R.id.btn_Continue).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    ((LoginActivity) getActivity()).startMyActivity();
+                    ((LoginActivity) getActivity()).startTestActivity();
                 }
             });
 

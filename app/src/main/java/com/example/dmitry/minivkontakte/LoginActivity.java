@@ -125,8 +125,8 @@ public class LoginActivity extends FragmentActivity {
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            View v = inflater.inflate(R.layout.login_screen, container, false);
-            v.findViewById(R.id.btn_Login).setOnClickListener(new View.OnClickListener() {
+            View v = inflater.inflate(R.layout.fragment_login, container, false);
+            v.findViewById(R.id.sign_in_button).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     VKSdk.login(getActivity(), sMyScope);
@@ -144,15 +144,15 @@ public class LoginActivity extends FragmentActivity {
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            View v = inflater.inflate(R.layout.logout_screen, container, false);
-            v.findViewById(R.id.btn_Continue).setOnClickListener(new View.OnClickListener() {
+            View v = inflater.inflate(R.layout.fragment_logout, container, false);
+            v.findViewById(R.id.continue_button).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     ((LoginActivity) getActivity()).startTestActivity();
                 }
             });
 
-            v.findViewById(R.id.btn_Logout).setOnClickListener(new View.OnClickListener() {
+            v.findViewById(R.id.logout).setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     VKSdk.logout();

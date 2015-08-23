@@ -14,9 +14,11 @@ import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.v7.app.ActionBarActivity;
 import android.text.Editable;
 import android.text.TextUtils;
 import android.util.Log;
@@ -26,18 +28,24 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKOpenAuthActivity;
+import com.vk.sdk.VKSdk;
+import com.vk.sdk.VKUIHelper;
 import com.vk.sdk.api.VKApi;
 import com.vk.sdk.api.VKApiConst;
 import com.vk.sdk.api.VKParameters;
 import com.vk.sdk.api.VKRequest;
 import com.vk.sdk.api.VKResponse;
+import com.vk.sdk.api.methods.VKApiMessages;
+import com.vk.sdk.api.model.VKApiMessage;
 import com.vk.sdk.api.model.VKApiUserFull;
 import com.vk.sdk.api.model.VKUsersArray;
+import com.vk.sdk.api.photo.VKUploadMessagesPhotoRequest;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -61,13 +69,11 @@ import java.util.List;
  * Created by Dmitry on 29.01.2015. ha-ha
  */
 
-public class MessageScreen extends Activity {
+public class MessageScreen extends ActionBarActivity {
 
     final String TAG = "myLogs";
 
     public static final String MESSAGE_DONE = "MessageScreen.MESSAGE_DONE";
-
-    public static Long useridL = null;
 
     public static String messageItself;
     public static String pathToImage = null;
@@ -75,16 +81,44 @@ public class MessageScreen extends Activity {
     File directory;
     //final int TYPE_PHOTO = 1;
     final int REQUEST_CODE_PHOTO = 1;
+    private static final int REQUEST_FILE = 1;
+    private boolean isCamAvailable = true;
     Uri fileUri;
 
     EditText writtenText;
     ImageView daImageE;
 
-    public static long yourId;
-
     MainActivity ss;
     String username, useravatar;
-    int userid;
+    long userid;
+
+    private VKRequest sendRequest;
+
+    // загружаем аватарки фоново
+    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
+        ImageView bmImage;
+
+        public DownloadImageTask(ImageView bmImage) {
+            this.bmImage = bmImage;
+        }
+
+        protected Bitmap doInBackground(String... urls) {
+            String urldisplay = urls[0];
+            Bitmap mIcon11 = null;
+            try {
+                InputStream in = new java.net.URL(urldisplay).openStream();
+                mIcon11 = BitmapFactory.decodeStream(in);
+            } catch (Exception e) {
+                Log.e("Error", e.getMessage());
+                e.printStackTrace();
+            }
+            return mIcon11;
+        }
+
+        protected void onPostExecute(Bitmap result) {
+            bmImage.setImageBitmap(result);
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,9 +131,7 @@ public class MessageScreen extends Activity {
             useravatar = bundle.getString("useravatar");
             userid = bundle.getInt("userid");
         }
-
-        //yourId = Long.parseLong(VKAccessToken.USER_ID);
-        Toast.makeText(getApplicationContext(), "userid = " + yourId, Toast.LENGTH_LONG).show();
+        Toast.makeText(getApplicationContext(), "User's Id = " + userid, Toast.LENGTH_LONG).show();
 
         createDirectory();
         daImageE = (ImageView)findViewById(R.id.daImage);
@@ -113,25 +145,15 @@ public class MessageScreen extends Activity {
 
         ((TextView) findViewById(R.id.userName)).setText(username);
         setTitle(username);
-
-        //writtenText = (EditText)findViewById(R.id.textOfMessage);
-        //messageItself = writtenText.getText().toString();
-
-        useridL = Long.valueOf(userid);
-        //yourId = Long.parseLong(VKOpenAuthActivity.VK_EXTRA_CLIENT_ID);
-        // yourIdL = Long.valueOf(yourId);
     }
 
     public void onClickPhoto(View view) {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        ContentValues values = new ContentValues();
-        values.put(MediaStore.Images.Media.TITLE, "IMG_" + timeStamp + ".jpg");
-
-        Intent photoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-        fileUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
-        //photoIntent.putExtra(MediaStore.EXTRA_OUTPUT, generateFileUri(TYPE_PHOTO));
-        photoIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
-        startActivityForResult(photoIntent, REQUEST_CODE_PHOTO);
+        // если камеры нет, то выбрать из галереи
+        if (isCamAvailable) {
+            showPopupMenu(view);
+        } else try {
+            getFromGallery(view);
+        } catch (Exception e) {}
     }
 
     @Override
@@ -166,7 +188,77 @@ public class MessageScreen extends Activity {
         }
     }
 
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        VKUIHelper.onActivityResult(this, requestCode, resultCode, data);
 
+        if (resultCode != Activity.RESULT_OK)
+            return;
+
+        // по resultCode получаем путь к файлу
+        String path = null;
+        if (requestCode == REQUEST_CODE_PHOTO) {
+            String filename = data.getStringExtra(MediaStore.EXTRA_FI);
+            if (filename != null) {
+                path = SendMsgActivity.this.getFileStreamPath(filename).getAbsolutePath();
+            }
+        } else if (requestCode == REQUEST_FILE) {
+            Uri fileUri = data.getData();
+            if (fileUri != null) {
+                path = uriToPath(SendMsgActivity.this, fileUri);
+            }
+        }
+
+        // и устанавливаем в качестве новой иконки
+        if (path != null) {
+            newIcon = PictureUtils.getScaledDrawable(SendMsgActivity.this, path);
+            mImageChoose.setImageDrawable(newIcon);
+        }
+    }
+
+    private void showPopupMenu(final View v) {
+        PopupMenu popupMenu = new PopupMenu(this, v);
+
+        // сокращенный вариант - только для android 4.0 и выше
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+            popupMenu.inflate(R.menu.menu_source);
+        } else {
+            popupMenu.getMenuInflater().inflate(R.menu.menu_source, popupMenu.getMenu());
+        }
+
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.menu_camera:
+                        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+                        ContentValues values = new ContentValues();
+                        values.put(MediaStore.Images.Media.TITLE, "IMG_" + timeStamp + ".jpg");
+
+                        Intent photoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+                        fileUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+                        photoIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
+
+                        startActivityForResult(photoIntent, REQUEST_CODE_PHOTO);
+                        return true;
+                    case R.id.menu_gallery:
+                        try {
+                            getFromGallery(v);
+                        } catch (Exception e) {}
+                        return true;
+                    default:
+                        return false;
+                }
+            }
+        });
+        popupMenu.show();
+    }
+
+    private void getFromGallery(View v) throws Exception  {
+        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType("image/*");
+        startActivityForResult(intent, REQUEST_FILE);
+    }
 
 
     /*private Uri generateFileUri(int type) {
@@ -190,31 +282,29 @@ public class MessageScreen extends Activity {
             directory.mkdirs();
     }
 
-    // загружаем аватарки фоново
-    private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
-        ImageView bmImage;
-
-        public DownloadImageTask(ImageView bmImage) {
-            this.bmImage = bmImage;
+    // помещаем в запрос данные и отправляем
+    private void sendMessage(String id, String message, String attachment) {
+        if (sendRequest != null) {
+            sendRequest.cancel();
         }
 
-        protected Bitmap doInBackground(String... urls) {
-            String urldisplay = urls[0];
-            Bitmap mIcon11 = null;
-            try {
-                InputStream in = new java.net.URL(urldisplay).openStream();
-                mIcon11 = BitmapFactory.decodeStream(in);
-            } catch (Exception e) {
-                Log.e("Error", e.getMessage());
-                e.printStackTrace();
+        VKParameters params;
+        if (attachment == null) {
+            params = VKParameters.from("user_id", id, "message", message);
+        } else {
+            Log.i(TAG, "att: " + attachment);
+            params = VKParameters.from("user_id", id, "message", message, "attachment", attachment);
+        }
+
+        sendRequest = new VKRequest("messages.send", params);
+        sendRequest.executeWithListener(new VKRequest.VKRequestListener() {
+            @Override
+            public void onComplete(VKResponse response) {
+                super.onComplete(response);
             }
-            return mIcon11;
-        }
-
-        protected void onPostExecute(Bitmap result) {
-            bmImage.setImageBitmap(result);
-        }
+        });
     }
+
 
     // вызывается при создании меню/action bar'а и подгружает xml-разметку
     @Override
@@ -236,69 +326,6 @@ public class MessageScreen extends Activity {
                 String theImage = pathToImage;
                 Toast.makeText(getApplicationContext(), "text = " + messageItself, Toast.LENGTH_SHORT).show();
                 Toast.makeText(getApplicationContext(), "image = " + theImage, Toast.LENGTH_LONG).show();
-
-                //if(imagePath == null)  // TODO  HERE!!!!!!!!!!!!!!!!!!!!!!!!!!!
-                /*if (writtenText == null && imageItself != null) {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Ошибка")
-                            .setMessage("Напишите хотя бы пару строчек текста!")
-                            .setCancelable(false)
-                            .setNegativeButton("ОК",
-                                    new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            dialog.cancel();
-                                        }
-                                    });
-                    AlertDialog alert = builder.create();
-                    alert.show();
-                } else if (writtenText != null && imageItself == null) {
-                    try {
-                        api.sendMessage(useridL, 0L, messageItself, null, null, null, null, null, null, null, null);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    } catch (KException e) {
-                        e.printStackTrace();
-                    }
-                } else if (writtenText != null && imageItself != null) {
-
-                    //api.sendMessage(useridL, 0L, messageItself, null, null, null, null, null, null, null, null);
-                    long photoPid = uploadPhotoToWall(imageItself, 25735573).pid;
-
-                    Collection<String> attachments = new ArrayList<String>();
-                    String att = "photo" + 25735573 + "_" + photoPid;
-                    attachments.add(att);
-                    try {
-                        api.sendMessage(useridL, 0L, messageItself, null, null, attachments, null, null, null, null, null);
-                        //api.createWallPost(account.user_id, "Test Message", attachments, null, false, false, false, null, null, null, null, null, null);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    } catch (KException e) {
-                        e.printStackTrace();
-                    }
-                    Intent answerIntent = new Intent();
-                    answerIntent.putExtra(MESSAGE_DONE, username + " - сообщение отправлено");
-                    setResult(RESULT_OK, answerIntent);
-                    finish();
-                } else {
-                    AlertDialog.Builder builder = new AlertDialog.Builder(this);
-                    builder.setTitle("Внимание")
-                            .setMessage("Невозможно отправить пустое сообщение!")
-                            .setCancelable(false)
-                            .setNegativeButton("ОК",
-                                    new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            dialog.cancel();
-                                        }
-                                    });
-                    AlertDialog alert = builder.create();
-                    alert.show();
-                }*/
                 return true;
             default:
                 return super.onOptionsItemSelected(item);

@@ -9,7 +9,7 @@
 
         <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content">
 
             <RelativeLayout
                 android:id="@+id/userValues"
@@ -26,9 +26,7 @@
                 <TextView
                     android:id="@+id/userName"
                     android:layout_centerVertical="true"
-                    android:layout_marginLeft="15sp"
                     android:layout_marginStart="15sp"
-                    android:layout_toRightOf="@+id/userAvatar"
                     android:layout_toEndOf="@+id/userAvatar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -66,7 +64,7 @@
 
 
             <com.example.dmitry.minivkontakte.DynamicImageView
-                android:id="@+id/daImage"
+                android:id="@+id/imageAtt"
                 android:layout_centerHorizontal="true"
                 android:layout_below="@+id/imageOfMessage"
                 android:layout_width="175dp"

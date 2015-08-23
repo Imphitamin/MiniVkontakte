@@ -109,7 +109,7 @@ public class MainActivity extends ListActivity {
         String useravatar = user.getAvatar();
         int userid = user.getUid();
 
-        Intent messageIntent = new Intent(this, MessageScreen.class);
+        Intent messageIntent = new Intent(this, BlankActivity.class);
         messageIntent.putExtra("username", username);
         messageIntent.putExtra("useravatar", useravatar);
         messageIntent.putExtra("userid", userid);
@@ -122,7 +122,7 @@ public class MainActivity extends ListActivity {
 
         if(requestCode == MESSAGE_SENDED) {
             if(resultCode == RESULT_OK) {
-                String infoMessage = data.getStringExtra(MessageScreen.MESSAGE_DONE);
+                String infoMessage = data.getStringExtra(BlankActivity.MESSAGE_DONE);
                 Toast.makeText(getApplicationContext(), infoMessage, Toast.LENGTH_LONG).show();
             } else {
                 Toast.makeText(getApplicationContext(), "Отменено", Toast.LENGTH_SHORT).show();

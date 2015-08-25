@@ -106,9 +106,9 @@ public class BlankActivity extends ActionBarActivity {
 
         switch (item.getItemId()) {
             case R.id.ok_button_menu:
-                messageItself = writtenText.getText().toString();
-                String theImage = pathToImage;
-                Toast.makeText(getApplicationContext(), "text = " + messageItself, Toast.LENGTH_SHORT).show();
+                String theMessage = mWrittenText.getText().toString();
+                mImage = pathToImage;
+                Toast.makeText(getApplicationContext(), "text = " + theMessage, Toast.LENGTH_SHORT).show();
                 Toast.makeText(getApplicationContext(), "image = " + theImage, Toast.LENGTH_LONG).show();
                 return true;
             default:

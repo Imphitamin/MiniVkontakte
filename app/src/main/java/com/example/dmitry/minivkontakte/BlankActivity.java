@@ -8,6 +8,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -87,4 +90,29 @@ public class BlankActivity extends ActionBarActivity {
         setTitle(username);
     }
 
+    // вызывается при создании меню/action bar'а и подгружает xml-разметку
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu_main_screen, menu);
+        MenuItem itemOk = menu.findItem(R.id.ok_button_menu);
+        itemOk.setVisible(true);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    // обработчик нажатия на пункт из action bar'а
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+            case R.id.ok_button_menu:
+                messageItself = writtenText.getText().toString();
+                String theImage = pathToImage;
+                Toast.makeText(getApplicationContext(), "text = " + messageItself, Toast.LENGTH_SHORT).show();
+                Toast.makeText(getApplicationContext(), "image = " + theImage, Toast.LENGTH_LONG).show();
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
 }

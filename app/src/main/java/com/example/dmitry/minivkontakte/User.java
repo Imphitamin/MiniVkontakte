@@ -3,6 +3,7 @@ package com.example.dmitry.minivkontakte;
 /**
  * Created by Dmitry on 21.08.2015.
  */
+
 public class User {
 
     private final String name;

@@ -29,11 +29,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonPrimitive;
+
 import com.vk.sdk.VKAccessToken;
 import com.vk.sdk.VKScope;
 import com.vk.sdk.VKSdk;
@@ -58,10 +54,12 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -170,6 +168,7 @@ public class SendMsgActivity extends ActionBarActivity {
             mButtonSend.setEnabled(false);
         }
     }
+
 
     private void getFromGallery(View v) throws Exception  {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
@@ -330,7 +329,7 @@ public class SendMsgActivity extends ActionBarActivity {
         Thread uploadThread = new Thread(new Runnable() {
             @Override
             public void run() {
-                VKRequest uploadRequest = VKApi.uploadMessagePhotoRequest(new VKUploadImage(file, VKImageParameters.jpgImage(0.9f)));
+                VKRequest uploadRequest = VKApi.uploadMessagesPhotoRequest(new VKUploadImage(file, VKImageParameters.jpgImage(0.9f)));
                 uploadRequest.executeWithListener(new VKRequest.VKRequestListener() {
                     @Override
                     public void onComplete(VKResponse response) {
@@ -343,8 +342,8 @@ public class SendMsgActivity extends ActionBarActivity {
 
                             //att = uploadResponse.getString(0);
 
-                            JsonParser postResponseParser = new JsonParser();
-                            JsonArray postObject = postResponseParser.parse(uploadResponse.toString()).getAsJsonArray();
+                            JSONParser postResponseParser = new JSONParser();
+                            JSONArray postObject = ((JSONArray) postResponseParser.parse(uploadResponse.toString()));
                             Log.i(TAG, "postObject: " + postObject.toString());
 
                             String owner = postObject.toString().substring(221);
@@ -358,6 +357,8 @@ public class SendMsgActivity extends ActionBarActivity {
                         } catch (JSONException e) {
                             e.printStackTrace();
                             Log.i(TAG, "exc: " + e);
+                        } catch (ParseException e) {
+                            e.printStackTrace();
                         }
 
                         uploadHandler.sendEmptyMessage(UPLOAD_TASK);;

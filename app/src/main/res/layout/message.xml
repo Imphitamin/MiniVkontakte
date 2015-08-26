@@ -54,7 +54,7 @@
             <ImageButton
                 android:contentDescription="@string/attach_image_to_message"
                 android:src="@drawable/ic_ab_app"
-                android:onClick="onClickPhoto"
+                android:onClick="onClickAtt"
                 android:id="@+id/imageOfMessage"
                 android:layout_width="50dp"
                 android:layout_height="50dp"

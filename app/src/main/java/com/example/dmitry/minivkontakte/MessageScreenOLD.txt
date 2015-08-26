@@ -123,7 +123,7 @@ public class MessageScreen extends ActionBarActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.message);
+        //setContentView(R.layout.message);
 
         Bundle bundle = getIntent().getExtras();
         if(getIntent().getStringExtra("username") != null && (getIntent().getStringExtra("useravatar") != null && (getIntent().getIntExtra("userid", 0) != 0))) {

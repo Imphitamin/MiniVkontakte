@@ -118,7 +118,7 @@ public class BlankActivity extends ActionBarActivity {
         Toast.makeText(getApplicationContext(), "User's Id = " + userid, Toast.LENGTH_LONG).show();
         userCharId = (int) userid;
 
-        mImage = (ImageView)findViewById(R.id.imageAtt);
+        mImage = (ImageView)findViewById(R.id.imageOfMessage);
         mWrittenText = (EditText)findViewById(R.id.textOfMessage);
 
         if (useravatar == null) {
@@ -222,10 +222,10 @@ public class BlankActivity extends ActionBarActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == TAKE_PHOTO) {
             if (resultCode == RESULT_OK) {
-                //pathToImage = fileUri.getPath();
+                pathToImage = fileUri.getPath();
                 //newIcon = PictureUtils.getScaledDrawable(BlankActivity.this, pathToImage);
-                String filename = data.getStringExtra(MediaStore.EXTRA_OUTPUT);
-                pathToImage = BlankActivity.this.getFileStreamPath(filename).getAbsolutePath();
+                //String filename = data.getStringExtra(MediaStore.EXTRA_OUTPUT);
+                //pathToImage = BlankActivity.this.getFileStreamPath(filename).getAbsolutePath();
                 newIcon = PictureUtils.getScaledDrawable(BlankActivity.this, pathToImage);
                 mImage.setImageDrawable(newIcon);
             } else if (requestCode == REQUEST_FILE) {

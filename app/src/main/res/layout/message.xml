@@ -62,16 +62,6 @@
                 android:layout_marginTop="10sp"
                 android:layout_centerHorizontal="true"/>
 
-
-            <com.example.dmitry.minivkontakte.DynamicImageView
-                android:id="@+id/imageAtt"
-                android:layout_centerHorizontal="true"
-                android:layout_below="@+id/imageOfMessage"
-                android:layout_width="175dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10sp"
-                android:scaleType="centerCrop" />
-
         </RelativeLayout>
 
     </ScrollView>

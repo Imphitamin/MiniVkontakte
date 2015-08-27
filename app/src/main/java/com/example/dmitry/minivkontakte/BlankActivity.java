@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -60,8 +61,10 @@ public class BlankActivity extends ActionBarActivity {
 
     public static final String MESSAGE_DONE = "MessageScreen.MESSAGE_DONE";
     private static final int TAKE_PHOTO = 0;
-    private static final int REQUEST_FILE = 1;
+    private static final int RESULT_LOAD_IMAGE = 1;
     private static final int UPLOAD_TASK = 2;
+
+    private boolean isCamAvailable = true;
 
     private Uri fileUri;
     public static String pathToImage = null;
@@ -129,11 +132,33 @@ public class BlankActivity extends ActionBarActivity {
 
         ((TextView) findViewById(R.id.userName)).setText(username);
         setTitle(username);
+
+        PackageManager pm = BlankActivity.this.getPackageManager();
+        if (!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA) &&
+                !pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FRONT)) {
+            isCamAvailable = false;
+        }
+
+        mImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // если камеры нет, то выбрать из галереи
+                if (isCamAvailable) {
+                    showPopupMenu(v);
+                } else try {
+                    getFromGallery(v);
+                } catch (Exception e) {
+                }
+            }
+        });
     }
 
-    // добавляем к сообщению фотографию или картинку из галереи
-    public void onClickAtt(View v) {
-            showPopupMenu(v);
+    private void getFromGallery(View v) {
+        Intent i = new Intent(
+                Intent.ACTION_PICK,
+                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+        startActivityForResult(i, RESULT_LOAD_IMAGE);
     }
 
     // спрашиваем, что открыть камеру или галерею? (чтобы выбрать фото)
@@ -161,7 +186,7 @@ public class BlankActivity extends ActionBarActivity {
                             Intent photoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                             //fileUri = getContentResolver().insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
 
-                            File f = createImageFile();
+                            File f = new File("test");
                             photoIntent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(f));
                             startActivityForResult(photoIntent, TAKE_PHOTO);
                             return true;
@@ -171,20 +196,14 @@ public class BlankActivity extends ActionBarActivity {
                             Toast toast = Toast
                                     .makeText(BlankActivity.this, errorMessage, Toast.LENGTH_LONG);
                             toast.show();
-                        } catch (IOException e) {
-                            e.printStackTrace();
                         }
                         return true;
                     case R.id.menu_gallery:
-                        try {
-                            getFromGallery(v);
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                            String errorMessage = "Ошибка: Галерея недоступна";
-                            Toast toast = Toast
-                                    .makeText(BlankActivity.this, errorMessage, Toast.LENGTH_LONG);
-                            toast.show();
-                        }
+                        Intent i = new Intent(
+                                Intent.ACTION_PICK,
+                                android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+
+                        startActivityForResult(i, RESULT_LOAD_IMAGE);
                         return true;
                     default:
                         return false;
@@ -194,32 +213,19 @@ public class BlankActivity extends ActionBarActivity {
         popupMenu.show();
     }
 
-    private File createImageFile() throws IOException {
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        String theFileName = "photo_" + timeStamp + ".jpg";
-        try {
-            File image = File.createTempFile(
-                    timeStamp,
-                    theFileName,
-                    getFilesDir()
-            );
-            mCurrentPhotoPath = image.getAbsolutePath();
-            return image;
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
     // берем фото из галереи
-    private void getFromGallery(View v) throws Exception  {
+    /* private void getFromGallery(View v) throws Exception  {
         Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
         intent.setType("image/*");
         startActivityForResult(intent, REQUEST_FILE);
-    }
+    } */
 
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
+        if (resultCode != Activity.RESULT_OK)
+            return;
+
         if (requestCode == TAKE_PHOTO) {
             if (resultCode == RESULT_OK) {
                 pathToImage = fileUri.getPath();
@@ -228,12 +234,20 @@ public class BlankActivity extends ActionBarActivity {
                 //pathToImage = BlankActivity.this.getFileStreamPath(filename).getAbsolutePath();
                 newIcon = PictureUtils.getScaledDrawable(BlankActivity.this, pathToImage);
                 mImage.setImageDrawable(newIcon);
-            } else if (requestCode == REQUEST_FILE) {
-                Uri fileUriGallery = data.getData();
-                if (fileUriGallery != null) {
-                    pathToImage = uriToPath(BlankActivity.this, fileUriGallery);
-                    newIcon = PictureUtils.getScaledDrawable(BlankActivity.this, pathToImage);
-                    mImage.setImageDrawable(newIcon);
+            } else if (requestCode == RESULT_LOAD_IMAGE) {
+                if (resultCode == RESULT_OK) {
+                    Uri selectedImage = data.getData();
+                    String[] filePathColumn = {MediaStore.Images.Media.DATA};
+
+                    Cursor cursor = getContentResolver().query(selectedImage,
+                            filePathColumn, null, null, null);
+                    cursor.moveToFirst();
+
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    String picturePath = cursor.getString(columnIndex);
+                    cursor.close();
+
+                    mImage.setImageBitmap(BitmapFactory.decodeFile(picturePath));
                 }
             }
         }
